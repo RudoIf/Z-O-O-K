@@ -3,15 +3,51 @@
 # desc
 #
 
-[zookd.c:1612]
-description goes here. for example, the 'buf' variable can be
-overwritten by the 'msg' variable because ...
 
-    <paste offending line(s) of code here>
 
-[http.c:1512]
-another description.
+#caused by url_decode at [http.c:110]
+[http.c:105]
+104    /* decode URL escape sequences in the requested path into reqpath */
+105    url_decode(reqpath, sp1);
+106
+107    envp += sprintf(envp, "REQUEST_URI=%s", reqpath) + 1;
 
-    <paste offending line(s) of code here>
 
-# many more come here
+#static 
+[http.c:94]
+[http.c:95]
+
+#caused by url_decode at [http.c:110]
+[http.c:159]
+158        /* Decode URL escape sequences in the value */
+159        url_decode(value, sp);
+
+#near above one
+[http.c:165]
+163        if (strcmp(buf, "CONTENT_TYPE") != 0 &&
+164            strcmp(buf, "CONTENT_LENGTH") != 0) {
+165            sprintf(envvar, "HTTP_%s", buf);
+167            setenv(envvar, value, 1);
+168        } else {
+
+[http.c:255]
+253    setenv("DOCUMENT_ROOT", pn, 1);
+254
+255    strcat(pn, name);
+256    split_path(pn);
+
+
+#caused by dir_join
+[http.c:331]
+similar to following
+
+[http.c:333]
+330    for (i = 0; indices[i]; i++) {
+331        dir_join(name, pn, indices[i]);
+332        if (stat(name, &st) == 0 && S_ISREG(st.st_mode)) {
+333            dir_join(name, getenv("SCRIPT_NAME"), indices[i]);
+334            break;
+335        }
+336    }
+
+
