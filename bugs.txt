@@ -3,26 +3,47 @@
 # desc
 #
 
+#The max size of a acceptable http request is near 8196 bytes
 
-
-#caused by url_decode at [http.c:110]
 [http.c:105]
 104    /* decode URL escape sequences in the requested path into reqpath */
 105    url_decode(reqpath, sp1);
 106
 107    envp += sprintf(envp, "REQUEST_URI=%s", reqpath) + 1;
 
+The char array reqpath[2048] in function process_client can be overflowed.
+Process_client will invoke http_request_line and url_decode at [http:105] in http_request_line 
+               will copy sp1(read from a http requset) to reqpath. 
 
-#static 
-[http.c:94]
-[http.c:95]
+However, function url_decode at [http.c:110] doesn't check the bounds:
 
-#caused by url_decode at [http.c:110]
+410    void rul_decode(char *dst, const char *src)
+       {
+           for (;;)
+           {
+               ...
+               dst++;
+           }
+       }
+
+Thus, we can write on the stack above reqpath[2048] through a http request line.
+
+Input: request line: "Get /xxx(more than 2048 bytes) HTTP/1.0\r\n\r\n"
+Can it be prevented using stack canaries? Yes.
+
+
 [http.c:159]
 158        /* Decode URL escape sequences in the value */
 159        url_decode(value, sp);
 
-#near above one
+This vulnerability is simialar to above one. It is also caused by url_decode.
+The char array value[512] in function http_request_headers will be overflowed.
+
+Input: request header: "xx: xxx...xxx(more than 512 bytes)"
+Can it be prevented using stack canaries? Yes.
+
+
+
 [http.c:165]
 163        if (strcmp(buf, "CONTENT_TYPE") != 0 &&
 164            strcmp(buf, "CONTENT_LENGTH") != 0) {
@@ -30,17 +51,42 @@
 167            setenv(envvar, value, 1);
 168        } else {
 
+The sprintf at line 165 can cause a buffer overflow.
+Envvar[512] can be overflowed by "Http_"+buf(max size is near 8196).
+This one is just after above one.
+
+Input: request header: "xx: xxx...xxx"(more than 512-sizeof(Http_))
+Can it be prevented using stack canaries? Yes.
+
+
 [http.c:255]
+246 void http_serve(int fd, const char *name)
+247 {
+248    void (*handler)(int, const char *) = http_serve_none;
+249    char pn[1024];
 253    setenv("DOCUMENT_ROOT", pn, 1);
+       ...
 254
 255    strcat(pn, name);
 256    split_path(pn);
+       ...
+269    handler(fd, pn);
 
+The variable pn[1024] at line 249 will be overflowed through the strcat function at line 255.
+There are two notable thing in this case:
+First, above pn is a function pointer "handler" which will be invoked at line 269.
+       We can overwrite this function pointer.
+Second, parameter "name" is constructed by server path + request path.
+       The size of name is not sure.
 
-#caused by dir_join
+Input: request line: "Get /xxx(more than near 1024 bytes) HTTP/1.0\r\n\r\n"
+Can it be prevented using stack canaries? No!
+Stack canary will compare a value at ebp-4. 
+In this case, if we just overflow function pointer "handler", 
+stack canary will not detect it. 
+
 [http.c:331]
-similar to following
-
+and
 [http.c:333]
 330    for (i = 0; indices[i]; i++) {
 331        dir_join(name, pn, indices[i]);
@@ -50,4 +96,8 @@ similar to following
 335        }
 336    }
 
+At line 331 and 333, the function dir_join will caused a buffer overflow.
+The varible name[512] can be overflowed.
 
+Input: request line: "Get /xxx(more than near 1024 bytes) HTTP/1.0\r\n\r\n"
+Can it be prevented using stack canaries? Yes!
