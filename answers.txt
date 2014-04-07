@@ -1,1 +1,53 @@
 ## Place your answers here.
+
+Exercise 2:
+   exploit-2a.py: Overflow the array reqpath[2048] at [zookd.c:63] and 
+                  overwrite the ebp and return address of function process_client.
+   exploit-2b.py: Overflow the array pn[1024] at [http.c:249] and
+                  overwrite the function pointer "handler" above pn.
+
+Exercise 3:
+   exploit-3.py is constructed from exploit-2a.py.
+   This attack overwrites the return address to make control flow jump to our code.
+
+   Compared to this manner, exploit-3b.py is constructed from exploit-2b.py and
+   in this case we make use of the function pointer "handler" to point to our code.
+   
+   In general, all the vulnerabilities I list can be exploited in this manner.
+   In case of exploit-2b.py, 
+   we can also overwrite its ret address and make sure the "handler" are not change.
+  
+Exercise 4:
+   The other buffer overflow vulnerabilites can be exploited in this same manner.
+   Actually, I implemented both two manners mentioned above.
+   exploit-4a.py: return address
+   exploit-4b.py: function pointer
+
+Exercise 5:
+1.access files on server through request line
+   We can send requests like "Get /../.vimrc HTTP/1.0\r\n\r\n" to read files one server.
+   Thus, we can read any configuration files such like /etc/password
+   and also some private files such like the ssh keys.
+   However, I find that modern web browsers will filter those "../" characters in url.
+   If you use IE or Chrome to input the url, it will not work. 
+   
+   Fix: check request url to filter things like "../"
+
+2.
+   We can send requests like "exploit-2.py" as url 
+   to run any executable files with web server's privilege.
+   Thus, attackers can use other ways put some executable files on ther server.
+   Then, input it in the url to execute it easily.
+
+   Fix: When executing a file, server shoud check its name and path
+
+Exercise 6:
+   Fix all the bugs listed in bugs.txt and 
+   save the fixed code to http.c.fixed and http.h.fixed
+
+   We check the sizeof buffer and the strlen of the input to avoid buffer overflow.
+   Include:
+   function url_decode    pass the size_t of the buffer to check the bounds
+   function dir_join      same to above
+   some sprintf           check the bounds directly
+   buffer pn in http_serve
