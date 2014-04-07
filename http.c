@@ -61,7 +61,7 @@ int http_read_line(int fd, char *buf, size_t size)
     return -1;
 }
 
-const char *http_request_line(int fd, char *reqpath, char *env, size_t *env_len)
+const char *http_request_line(int fd, char *reqpath, size_t reqsize, char *env, size_t *env_len)
 {
     static char buf[8192];      /* static variables are not on the stack */
     char *sp1, *sp2, *qp, *envp = env;
@@ -102,7 +102,7 @@ const char *http_request_line(int fd, char *reqpath, char *env, size_t *env_len)
     }
 
     /* decode URL escape sequences in the requested path into reqpath */
-    url_decode(reqpath, sp1);
+    url_decode(reqpath, reqsize, sp1);
 
     envp += sprintf(envp, "REQUEST_URI=%s", reqpath) + 1;
 
@@ -156,14 +156,16 @@ const char *http_request_headers(int fd)
         }
 
         /* Decode URL escape sequences in the value */
-        url_decode(value, sp);
+        url_decode(value, sizeof(value), sp);
 
         /* Store header in env. variable for application code */
         /* Some special headers don't use the HTTP_ prefix. */
         if (strcmp(buf, "CONTENT_TYPE") != 0 &&
             strcmp(buf, "CONTENT_LENGTH") != 0) {
-            sprintf(envvar, "HTTP_%s", buf);
-            setenv(envvar, value, 1);
+            if(strlen(buf) <= 500){     //check the strlen to avoid buffer overflow
+                sprintf(envvar, "HTTP_%s", buf);
+                setenv(envvar, value, 1);
+            }
         } else {
             setenv(buf, value, 1);
         }
@@ -251,8 +253,12 @@ void http_serve(int fd, const char *name)
 
     getcwd(pn, sizeof(pn));
     setenv("DOCUMENT_ROOT", pn, 1);
-
-    strcat(pn, name);
+    
+    if(strlen(name) < sizeof(pn)){
+        strcat(pn, name);
+    }
+    else
+       warnx("input parameter:name in http_serve overflows pn\n");
     split_path(pn);
 
     if (!stat(pn, &st))
@@ -313,7 +319,10 @@ void http_serve_file(int fd, const char *pn)
     close(filefd);
 }
 
-void dir_join(char *dst, const char *dirname, const char *filename) {
+void dir_join(char *dst, size_t dst_size, const char *dirname, const char *filename) {
+    if(dst_size <= strlen(dirname) + strlen(filename) + 1){ 
+        return;
+    }
     strcpy(dst, dirname);
     if (dst[strlen(dst) - 1] != '/')
         strcat(dst, "/");
@@ -328,9 +337,9 @@ void http_serve_directory(int fd, const char *pn) {
     int i;
 
     for (i = 0; indices[i]; i++) {
-        dir_join(name, pn, indices[i]);
+        dir_join(name, sizeof(name), pn, indices[i]);
         if (stat(name, &st) == 0 && S_ISREG(st.st_mode)) {
-            dir_join(name, getenv("SCRIPT_NAME"), indices[i]);
+            dir_join(name, sizeof(name), getenv("SCRIPT_NAME"), indices[i]);
             break;
         }
     }
@@ -407,8 +416,9 @@ void http_serve_executable(int fd, const char *pn)
     }
 }
 
-void url_decode(char *dst, const char *src)
+void url_decode(char *dst, size_t dst_size, const char *src)
 {
+    size_t len = 0;
     for (;;)
     {
         if (src[0] == '%' && src[1] && src[2])
@@ -426,6 +436,11 @@ void url_decode(char *dst, const char *src)
             *dst = ' ';
             src++;
         }
+        else if (len == dst_size-1){
+            warnx("urldecode size:%d \n", len);
+            *dst = '\0';
+            break;
+        }
         else
         {
             *dst = *src;
@@ -436,6 +451,7 @@ void url_decode(char *dst, const char *src)
         }
 
         dst++;
+        len++;
     }
 }
 

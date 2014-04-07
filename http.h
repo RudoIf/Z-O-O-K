@@ -8,7 +8,7 @@
 /** Read the request line like "GET /xxx HTTP/1.0".
  *  \return Error message, or NULL if succeed.
  */
-const char *http_request_line(int fd, char *reqpath, char *env, size_t *env_len);
+const char *http_request_line(int fd, char *reqpath, size_t reqsize, char *env, size_t *env_len);
 
 /** Read all HTTP request headers.
  *  \return Error message, or NULL if succeed.
@@ -30,7 +30,7 @@ void http_serve_directory(int fd, const char *);
 void http_serve_executable(int fd, const char *);
 
 /** URL decoder. */
-void url_decode(char *dst, const char *src);
+void url_decode(char *dst, size_t dst_size, const char *src);
 
 /** Unpack and set environmental strings. */
 void env_deserialize(const char *env, size_t len);
