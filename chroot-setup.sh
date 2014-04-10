@@ -76,3 +76,11 @@ rm -rf /jail/zoobar/db
 python /jail/zoobar/zoodb.py init-person
 python /jail/zoobar/zoodb.py init-transfer
 
+set_perms 61011:61011 755 /jail/zookd
+#set_perms 61012:61012 755 /jail/zookfs
+set_perms 61014:61014 755 /jail/zookfs
+
+#dynamic service
+chown -R 61014:61014 /jail/zoobar
+set_perms 123:456 777 /jail/zoobar/index.cgi
+

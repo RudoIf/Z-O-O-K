@@ -182,7 +182,7 @@ def check_exec(svc, allowed):
     x = file_read("/tmp/executable.log").strip().split()
     bad = list(sorted(set(x) - set(allowed)))
     if bad != []:
-        log(red("FAIL"), "Exercise 4:", "%s allows execution of %s" % (svc, bad[0]))
+        log(red("FAIL"), "Exercise 4:", "uid:%d,gid:%d,%s allows execution of %s" % (uid, gid, svc, bad[0]))
         return False
     return True
 

@@ -12,7 +12,18 @@ def transfer():
     warning = None
     try:
         if 'recipient' in request.form:
-            zoobars = eval(request.form['zoobars'])
+            #zoobars = eval(request.form['zoobars'])
+            #zoobars should be number
+            zoobars = int(request.form['zoobars'])
+
+            #zoobars should greater than 0
+            if zoobars <= 0:
+                raise ValueError()
+
+            #zoobars cannot be transfered to himself
+            if g.user.person.username == request.form['recipient']:
+                raise AttributeError()
+            
             bank.transfer(g.user.person.username,
                           request.form['recipient'], zoobars)
             warning = "Sent %d zoobars" % zoobars
