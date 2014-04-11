@@ -3,8 +3,11 @@ from functools import wraps
 from debug import *
 from zoodb import *
 
-import auth
+
 import bank_client as bank
+
+import auth_client as auth
+
 import random
 
 class User(object):
@@ -28,7 +31,15 @@ class User(object):
     def addRegistration(self, username, password):
         token = auth.register(username, password)
         if token is not None:
+
             bank.register(username)
+
+            db_person = person_setup()
+            newperson = Person()
+            newperson.username = username
+            db_person.add(newperson)
+            db_person.commit()
+
             return self.loginCookie(username, token)
         else:
             return None

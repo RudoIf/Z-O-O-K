@@ -5,12 +5,13 @@
 import rpclib
 import sys
 import os
+import bank
 from debug import *
- class BankRpcServer(rpclib.RpcServer):
+class BankRpcServer(rpclib.RpcServer):
      def rpc_register(self, username):
          return bank.register(username)
      def rpc_transfer(self, sender, sender_token, recipient, zoobars):
-         return bamk.transfer(sender, sender_token, recipient, zoobars)
+         return bank.transfer(sender, sender_token, recipient, zoobars)
      def rpc_balance(self, username):
          return bank.balance(username)
      def rpc_get_log(self, username):

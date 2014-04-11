@@ -4,7 +4,7 @@ from login import requirelogin
 from zoodb import *
 from debug import *
 from profile import *
-import bank
+import bank_client as bank
 
 @catch_err
 @requirelogin
@@ -15,7 +15,7 @@ def users():
         persondb = person_setup()
         user = persondb.query(Person).get(request.values['user'])
         if user:
-            transferdb = transfer_setup()
+            
             p = user.profile
             if p.startswith("#!python"):
                 p = run_profile(user)
