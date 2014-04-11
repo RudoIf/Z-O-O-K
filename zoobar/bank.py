@@ -3,11 +3,30 @@ from debug import *
 
 import time
 
-def transfer(sender, recipient, zoobars):
-    persondb = person_setup()
-    senderp = persondb.query(Person).get(sender)
-    recipientp = persondb.query(Person).get(recipient)
+def register(username):
+    if not auth.is_registered(username):
+        raise ValueError("No such user to register a new bank")
 
+    db = bank_setup()
+    pserson = db.query(Bank).get(username)
+    if (person):
+        return None
+
+    bank = Bank()
+    bank.username = username
+    db.add(bank)
+    db.commit()
+
+def transfer(sender, recipient, zoobars, sender_token):
+    if not auth.check_token(sender, sender_token):
+        raise ValueError("Sender token error")
+    if not auth.is_registered(recipientp):
+        raise ValueError("Receiver not exisi")
+
+    bankdb = bank_setup()
+    senderp = bankdb.query(Bank).get(sender)
+    recipientp = bankdb.query(Bank).get(recipient)
+    
     sender_balance = senderp.zoobars - zoobars
     recipient_balance = recipientp.zoobars + zoobars
 
@@ -16,7 +35,7 @@ def transfer(sender, recipient, zoobars):
 
     senderp.zoobars = sender_balance
     recipientp.zoobars = recipient_balance
-    persondb.commit()
+    bankdb.commit()
 
     transfer = Transfer()
     transfer.sender = sender
@@ -29,9 +48,10 @@ def transfer(sender, recipient, zoobars):
     transferdb.commit()
 
 def balance(username):
-    db = person_setup()
-    person = db.query(Person).get(username)
-    return person.zoobars
+    db = bank_setup()
+    person = db.query(Bank).get(username)
+    if person:
+        return person.zoobars
 
 def get_log(username):
     db = transfer_setup()

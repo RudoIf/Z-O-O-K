@@ -4,7 +4,7 @@ from debug import *
 from zoodb import *
 
 import auth
-import bank
+import bank_client as bank
 import random
 
 class User(object):
@@ -28,6 +28,7 @@ class User(object):
     def addRegistration(self, username, password):
         token = auth.register(username, password)
         if token is not None:
+            bank.register(username)
             return self.loginCookie(username, token)
         else:
             return None

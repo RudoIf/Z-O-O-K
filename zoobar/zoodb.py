@@ -23,6 +23,11 @@ class Transfer(TransferBase):
     amount = Column(Integer)
     time = Column(String)
 
+class Bank(BankBase):
+    __tablename__ = "bank"
+    username = Column(String(128), primary_key=True)
+    zoobars = Column(Integer, nullable=False, default=10)
+
 def dbsetup(name, base):
     thisdir = os.path.dirname(os.path.abspath(__file__))
     dbdir   = os.path.join(thisdir, "db", name)
@@ -41,6 +46,9 @@ def person_setup():
 def transfer_setup():
     return dbsetup("transfer", TransferBase)
 
+def bank_setup():
+    return debsetup("bank", BankBase)
+
 import sys
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -52,5 +60,7 @@ if __name__ == "__main__":
         person_setup()
     elif cmd == 'init-transfer':
         transfer_setup()
+    elif cmd == 'init-bank':
+        bank_setup()
     else:
         raise Exception("unknown command %s" % cmd)
