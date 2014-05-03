@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
 import rpclib
+import hashlib
 import sys
 import os
 import sandboxlib
 import urllib
 import socket
-import bank
+import bank_client as bank
 import zoodb
 
 from debug import *
@@ -20,6 +21,12 @@ class ProfileAPIServer(rpclib.RpcServer):
         self.user = user
         self.visitor = visitor
 
+        self.user_token = zoodb.cred_setup().query(zoodb.Cred).get(self.user).token 
+
+        uid = 61014
+        os.setresgid(uid, uid, uid)
+        os.setresuid(uid, uid, uid)
+
     def rpc_get_self(self):
         return self.user
 
@@ -27,14 +34,7 @@ class ProfileAPIServer(rpclib.RpcServer):
         return self.visitor
 
     def rpc_get_xfers(self, username):
-        xfers = []
-        for xfer in bank.get_log(username):
-            xfers.append({ 'sender': xfer.sender,
-                           'recipient': xfer.recipient,
-                           'amount': xfer.amount,
-                           'time': xfer.time,
-                         })
-        return xfers
+        return bank.get_log(username)
 
     def rpc_get_user_info(self, username):
         person_db = zoodb.person_setup()
@@ -47,7 +47,7 @@ class ProfileAPIServer(rpclib.RpcServer):
                }
 
     def rpc_xfer(self, target, zoobars):
-        bank.transfer(self.user, target, zoobars)
+        bank.transfer(self.user, self.user_token, target, zoobars)
 
 def run_profile(pcode, profile_api_client):
     globals = {'api': profile_api_client}
@@ -55,9 +55,15 @@ def run_profile(pcode, profile_api_client):
 
 class ProfileServer(rpclib.RpcServer):
     def rpc_run(self, pcode, user, visitor):
-        uid = 0
+        uid = 61014
 
-        userdir = '/tmp'
+        userdir = '/tmp/' + hashlib.sha512(user).hexdigest()
+        try:
+            os.mkdir(userdir)
+            os.chmod(userdir, 0o1363)
+            os.chown(userdir, uid, -1)
+        except:
+            pass
 
         (sa, sb) = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)
         pid = os.fork()
@@ -71,7 +77,7 @@ class ProfileServer(rpclib.RpcServer):
         sb.close()
         os.waitpid(pid, 0)
 
-        sandbox = sandboxlib.Sandbox(userdir, uid, '/profilesvc/lockfile')
+        sandbox = sandboxlib.Sandbox(userdir, uid, '/profsvc/lockfile')
         with rpclib.RpcClient(sa) as profile_api_client:
             return sandbox.run(lambda: run_profile(pcode, profile_api_client))
 

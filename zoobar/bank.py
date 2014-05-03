@@ -18,9 +18,9 @@ def register(username):
     db.add(bank)
     db.commit()
 
-def transfer(sender, recipient, zoobars, sender_token):
+def transfer(sender, sender_token, recipient, zoobars):
     if not auth.check_token(sender, sender_token):
-        raise ValueError("Sender token error")
+        raise ValueError("Sender token error2")
     if not auth.is_registered(recipient):
         raise ValueError("Receiver not exisi")
 

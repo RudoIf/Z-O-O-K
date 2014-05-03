@@ -68,6 +68,8 @@ create_socket_dir /jail/banksvc 61018:61018 755
 
 create_socket_dir /jail/authsvc 61015:61015 755
 
+create_socket_dir /jail/profsvc 0:61019 755
+
 
 mkdir -p /jail/tmp
 chmod a+rwxt /jail/tmp

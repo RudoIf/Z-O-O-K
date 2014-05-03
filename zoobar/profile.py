@@ -8,7 +8,7 @@ def run_profile(user):
     try:
         pcode = user.profile.encode('ascii', 'ignore')
         pcode = pcode.replace('\r\n', '\n')
-        with rpclib.client_connect('/profilesvc/sock') as c:
+        with rpclib.client_connect('/profsvc/sock') as c:
             return c.call('run', pcode=pcode,
                                  user=user.username,
                                  visitor=g.user.person.username)

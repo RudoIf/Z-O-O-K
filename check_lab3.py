@@ -286,7 +286,6 @@ def check_granter_1():
     html, cookies = z.login("test1", "supersecretpassword")
     if not z.check_zoobars(html, "test1", 6, "")[0]:
         log(red("FAIL"), "Exercises 1-5:", "Not using profile owner's token")
-
     return True
 
 def check_granter_2():

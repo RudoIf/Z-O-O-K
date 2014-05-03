@@ -24,8 +24,8 @@ def transfer():
             if g.user.person.username == request.form['recipient']:
                 raise AttributeError()
             
-            bank.transfer(g.user.person.username,
-                          request.form['recipient'], zoobars, g.user.token)
+            bank.transfer(g.user.person.username, g.user.token,
+                          request.form['recipient'], zoobars)
             warning = "Sent %d zoobars" % zoobars
     except (KeyError, ValueError, AttributeError) as e:
         traceback.print_exc()
