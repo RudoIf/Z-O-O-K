@@ -60,7 +60,7 @@ class ProfileServer(rpclib.RpcServer):
         userdir = '/tmp/' + hashlib.sha512(user).hexdigest()
         try:
             os.mkdir(userdir)
-            os.chmod(userdir, 0o1363)
+            os.chmod(userdir, 0777)
             os.chown(userdir, uid, -1)
         except:
             pass
